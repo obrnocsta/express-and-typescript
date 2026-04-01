@@ -13,15 +13,41 @@ const app: Express = express();
 
 app.use(cors());
 
-app.get("/", (req: Request, res: Response<Pet[]>): void => {
-  res.json(pets);
-});
+app.get(
+  "/",
+  (
+    req: Request<{}, unknown, {}, { species?: string }>,
+    res: Response<Pet[]>,
+  ) => {
+    const { species } = req.query;
+    let filteredPets: Pet[] = pets;
+    if (species) {
+      filteredPets = filteredPets.filter(
+        (pet: Pet): boolean =>
+          pet.species.toLowerCase() === species.toLowerCase(),
+      );
+    }
+    res.json(filteredPets);
+  },
+);
 
-app.get("/:id", (req: Request<{ id: string }>, res: Response): void => {
-  const { id } = req.params;
-  const pet = pets.find((pet) => pet.id === parseInt(id));
-  res.json(pet);
-});
+app.get(
+  "/:id",
+  (
+    req: Request<{ id: string }>,
+    res: Response<Pet | { success: boolean; message: string }>,
+  ): void => {
+    const { id } = req.params;
+    const pet: Pet | undefined = pets.find(
+      (pet: Pet): boolean => pet.id === parseInt(id),
+    );
+    if (pet) {
+      res.json(pet);
+    } else {
+      res.status(404).json({ success: false, message: "No pet with that ID" });
+    }
+  },
+);
 
 app.use(
   (
